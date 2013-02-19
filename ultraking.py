@@ -1,9 +1,10 @@
 import cv
 import numpy
 
-from utils import array2cv, cv2array, array2img
+from utils import cv2array, array2img
 from tracker import skl, warpImg, maxLikelihood
 from polygon import Polygon
+
 
 def onMouse(event, x, y, flags, polygon):
     if event == cv.CV_EVENT_LBUTTONDOWN:
@@ -17,16 +18,16 @@ if __name__ == "__main__":
     size = (0, 0)
     outSize = (32, 32)
     polygon = Polygon(center, size, outSize=outSize)
-    
+
     cv.NamedWindow("Webcam Stream", cv.CV_WINDOW_AUTOSIZE)
     cv.NamedWindow("Warped Stream", cv.CV_WINDOW_AUTOSIZE)
     cv.NamedWindow("Mean Stream", cv.CV_WINDOW_AUTOSIZE)
     cv.NamedWindow("1st Eigenface Stream", cv.CV_WINDOW_AUTOSIZE)
     cv.SetMouseCallback("Webcam Stream", onMouse, polygon)
-    
+
     capture = cv.CreateCameraCapture(0)
 
-    extract=False
+    extract = False
 
     #SKL initialization
     actualisation = 10
@@ -38,7 +39,7 @@ if __name__ == "__main__":
     ff = 0.99
     K = 16
     i = 0
-    
+
     # Dumb particles filter parameters
     num = 300
     sigmaCenterX = 20
@@ -47,13 +48,13 @@ if __name__ == "__main__":
     sigmaSizeY = 3
     sigmaRot = 10 * numpy.pi / 180.0
     sigmaIncl = 1 * numpy.pi / 180.0
-    
+
     while True:
         # Get the image from the camera
         inImgRGB = cv.QueryFrame(capture)
         inImgGray = cv.CreateImage(cv.GetSize(inImgRGB), inImgRGB.depth, 1)
         cv.CvtColor(inImgRGB, inImgGray, cv.CV_RGB2GRAY)
-        
+
         if extract:
             # Multiple extraction
             polygonTmp = []
@@ -65,7 +66,7 @@ if __name__ == "__main__":
                 rotationTmp = polygon.rotation + numpy.random.randn() * sigmaRot
                 inclinaisonTmp = polygon.transvection + numpy.random.randn() * sigmaIncl
                 polygonTmp.append(Polygon(centerTmp, sizeTmp, rotationTmp, inclinaisonTmp, outSize))
-                
+
                 subImgTmp = warpImg(inImgGray, polygonTmp[k])
                 if subImgs == None:
                     subImgs = numpy.mat(cv2array(subImgTmp)).ravel().T
@@ -73,9 +74,9 @@ if __name__ == "__main__":
                     subImgs = numpy.hstack((subImgs, numpy.mat(cv2array(subImgTmp)).ravel().T))
             idx = maxLikelihood(subImgs, U, D, mu)
             polygon = polygonTmp[idx]
-            
+
             # SKL!!!
-            newData = subImgs[:,idx]
+            newData = subImgs[:, idx]
             if data == None:
                 data = newData
             else:
@@ -83,16 +84,16 @@ if __name__ == "__main__":
             if i % actualisation == 0:
                 U, D, mu, n = skl(data=data, U0=U, D0=D, mu0=mu, n0=n, ff=ff, K=K)
                 data = None
-            
-            cv.ShowImage("Warped Stream", array2img(subImgs[:, idx],outSize))
+
+            cv.ShowImage("Warped Stream", array2img(subImgs[:, idx], outSize))
             cv.ShowImage("Mean Stream", array2img(mu, outSize))
-            cv.ShowImage("1st Eigenface Stream", array2img(U[:, 0],outSize))
+            cv.ShowImage("1st Eigenface Stream", array2img(U[:, 0], outSize))
             i = i + 1
-        
+
         # Draw the extraction polygon
         cv.PolyLine(inImgGray, (polygon.corners(),), True, cv.RGB(255, 255, 255))
         cv.ShowImage("Webcam Stream", inImgGray)
-        
+
         keyPressed = cv.WaitKey(10)
         if keyPressed == 13:
             extract = not(extract)

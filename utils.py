@@ -1,11 +1,13 @@
 import cv
 import numpy
 
+
 def array2img(ar, outSize):
     """Reshape a mono-dimensional array (a vector) into an IplImage."""
     ar = ar.reshape(outSize)
     ar = (ar - ar.min()) / (ar.max() - ar.min())
     return array2cv(ar)
+
 
 def cv2array(im):
     """Transform an cv.IplImage to a numpy.array."""
@@ -18,10 +20,10 @@ def cv2array(im):
         cv.IPL_DEPTH_32F: 'float32',
         cv.IPL_DEPTH_64F: 'float64'
     }
-    arrdtype = im.depth
     a = numpy.fromstring(im.tostring(), dtype=depth2dtype[im.depth], count=im.width * im.height * im.nChannels)
     a.shape = (im.height, im.width, im.nChannels)
     return a
+
 
 def array2cv(a):
     """Transform a numpy.array to an cv.IplImage ."""

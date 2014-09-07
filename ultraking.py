@@ -95,7 +95,7 @@ if __name__ == "__main__":
         cv.ShowImage("Webcam Stream", inImgGray)
 
         keyPressed = cv.WaitKey(10)
-        if keyPressed == 13:
+        if keyPressed == 10:
             extract = not(extract)
         elif keyPressed != -1:
             break
